@@ -1,3 +1,6 @@
+from typing import List
+
+from schema.message import Emoji
 from utils.db import DataStorage
 
 MESSAGE_COLLECTION = "messages"
@@ -52,7 +55,7 @@ async def get_message(org_id: str, room_id: str, message_id: str) -> dict:
     return {}
 
 
-async def update_reaction(org_id: str, message_id: str, message: dict) -> dict:
+async def update_reaction(org_id: str, message: dict) -> dict:
     """Update message reactions
     Args:
         org_id (str): The organization id
@@ -63,9 +66,77 @@ async def update_reaction(org_id: str, message_id: str, message: dict) -> dict:
     """
     DB = DataStorage(org_id)
 
-    message_id = message["_id"]
     data = {"emojis": message["emojis"]}
-    response = await DB.update(MESSAGE_COLLECTION, message_id, data)
+    response = await DB.update(MESSAGE_COLLECTION, message["_id"], data)
     if response and "status_code" not in response:
         return response
     return {}
+
+
+def append_emoji(emoji: Emoji, payload: Emoji) -> Emoji:
+    """[summary]
+
+    Args:
+        emoji (Emoji): [description]
+        payload (Emoji): [description]
+
+    Returns:
+        Emoji: [description]
+    """
+
+    emoji["reactedUsersId"].append(payload.reactedUsersId[0])
+    emoji["count"] += 1
+
+    return emoji
+
+
+def remove_emoji(emoji: Emoji, payload: Emoji, reactions: List[Emoji]) -> Emoji:
+    """[summary]
+
+    Args:
+        emoji (Emoji): [description]
+        payload (Emoji): [description]
+        reactions (List[Emoji]): [description]
+
+    Returns:
+        Emoji: [description]
+    """
+
+    emoji["reactedUsersId"].remove(payload.reactedUsersId[0])
+    emoji["count"] -= 1
+    if emoji["count"] == 0:
+        reactions.remove(emoji)
+
+    return emoji
+
+
+def toggle_reaction(emoji: Emoji, payload: Emoji, reactions: List[Emoji]) -> Emoji:
+    """[summary]
+
+    Args:
+        emoji (Emoji): [description]
+        payload (Emoji): [description]
+        reactions (List[Emoji]): [description]
+
+    Returns:
+        Emoji: [description]
+    """
+    if payload.reactedUsersId[0] not in emoji["reactedUsersId"]:
+        return append_emoji(emoji, payload)
+    return remove_emoji(emoji, payload, reactions)
+
+
+def get_member_emoji(emoji_name: str, emojis: List[Emoji]):
+    """[summary]
+
+    Args:
+        emoji_name (str): [description]
+        emojis (List[Emoji]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    if not emojis:
+        return None
+    for emoji in emojis:
+        return emoji if emoji_name == emoji["name"] else None
