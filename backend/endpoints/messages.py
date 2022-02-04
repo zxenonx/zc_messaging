@@ -4,8 +4,9 @@ from schema.response import ResponseModel
 from starlette.responses import JSONResponse
 from utils.centrifugo import Events, centrifugo_client
 from utils.db import DataStorage
-from utils.message_utils import (MESSAGE_COLLECTION, get_message,
-                                 get_room_messages, update_reaction)
+from utils.message_utils import (MESSAGE_COLLECTION, get_member_emoji,
+                                 get_message, get_room_messages,
+                                 toggle_reaction, update_reaction)
 from utils.room_utils import get_room
 
 router = APIRouter()
@@ -295,73 +296,74 @@ async def message_reaction(
         HTTPException [404]: Message not found || Room not found
         HTTPException [424]: Failed to add reaction || Failed to update reaction
     """
+
     message = await get_message(org_id, room_id, message_id)
     if not message:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Message not found",
         )
-    reactions = message.get("emojis")
 
     room = await get_room(org_id, room_id)
     if not room:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Room not found"
         )
-    members = room.get("room_members", {})
 
     reaction_payload = request.dict()
-    if reaction_payload["reactedUsersId"][0] not in list(members):
+    if not reaction_payload["reactedUsersId"]:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No member provided",
+        )
+
+    members = room.get("room_members", {}).keys()
+    if reaction_payload["reactedUsersId"][0] not in members:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid room member",
         )
-    if reactions:
-        for emoji in reactions:
-            if emoji["name"] == reaction_payload["name"]:
-                if reaction_payload["reactedUsersId"][0] not in emoji["reactedUsersId"]:
-                    emoji["reactedUsersId"].append(
-                        reaction_payload["reactedUsersId"][0]
-                    )
-                    emoji["count"] += 1
-                else:
-                    emoji["reactedUsersId"].remove(
-                        reaction_payload["reactedUsersId"][0]
-                    )
-                    emoji["count"] -= 1
-                    if emoji["count"] == 0:
-                        reactions.remove(emoji)
 
-                updated_reaction = await update_reaction(org_id, message_id, message)
-                if not updated_reaction:
-                    raise HTTPException(
-                        status_code=status.HTTP_424_FAILED_DEPENDENCY,
-                        detail="Failed to update reaction",
-                    )
-                # publish to centrifugo in the background
-                background_tasks.add_task(
-                    centrifugo_client.publish,
-                    room_id,
-                    Events.MESSAGE_UPDATE,
-                    reaction_payload,
-                )
-                return JSONResponse(
-                    status_code=status.HTTP_200_OK,
-                    content=ResponseModel.success(
-                        data=emoji, message="Reaction updated successfully"
-                    ),
-                )
+    reactions = message.get("emojis")
+    emoji = get_member_emoji(reaction_payload["name"], reactions)
+
+    if reactions and emoji:
+        toggle_reaction(emoji, Emoji(**reaction_payload), reactions)
+
+        updated_reaction = await update_reaction(org_id, message)
+        if not updated_reaction:
+            raise HTTPException(
+                status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                detail="Failed to update reaction",
+            )
+
+        # publish to centrifugo in the background
+        background_tasks.add_task(
+            centrifugo_client.publish,
+            room_id,
+            Events.MESSAGE_UPDATE,
+            emoji,
+        )
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=ResponseModel.success(
+                data=emoji, message="Reaction updated successfully"
+            ),
+        )
     reactions.append(reaction_payload)
-    new_reaction = await update_reaction(org_id, message_id, message)
+    new_reaction = await update_reaction(org_id, message)
     if not new_reaction:
         raise HTTPException(
             status_code=status.HTTP_424_FAILED_DEPENDENCY,
             detail="Failed to add reaction",
         )
+
     # publish to centrifugo in the background
     background_tasks.add_task(
         centrifugo_client.publish, room_id, Events.MESSAGE_UPDATE, reaction_payload
     )
+
     return JSONResponse(
         content=ResponseModel.success(
             data=reaction_payload, message="Reaction added successfully"
