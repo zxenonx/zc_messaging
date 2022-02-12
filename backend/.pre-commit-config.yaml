@@ -1,5 +1,6 @@
 default_stages: [commit]
-fail_fast: true
+exclude: 'Pipfile.lock'
+fail_fast: false
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
@@ -17,6 +18,13 @@ repos:
     rev: 21.9b0
     hooks:
       - id: black
+
+  - repo: https://github.com/timothycrosley/isort
+    rev: 4.3.21-2
+    hooks:
+    - id: isort
+      args: [--filter-files]
+      files: \.py$
 
   - repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
@@ -38,3 +46,4 @@ repos:
         - --disable=C0301
         - --disable=R0902
         - --disable=R0903
+        - --disable=C0103
