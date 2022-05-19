@@ -6,8 +6,9 @@ from schema.response import ResponseModel
 from schema.room import Role, Room, RoomMember, RoomRequest, RoomType
 from utils.centrifugo import Events, centrifugo_client
 from utils.db import DataStorage
-from utils.room_utils import ROOM_COLLECTION, get_room, remove_room_member
+from utils.room_utils import get_room, remove_room_member
 from utils.sidebar import sidebar
+from config.settings import settings
 
 router = APIRouter()
 
@@ -53,7 +54,7 @@ async def create_room(
             "closed": False,
         }
 
-    response = await DB.write(ROOM_COLLECTION, data=room_obj.dict())
+    response = await DB.write(settings.ROOM_COLLECTION, data=room_obj.dict())
     if response and response.get("status_code", None) is None:
         room_id = {"room_id": response.get("data").get("object_id")}
 
@@ -150,8 +151,7 @@ async def remove_member(
     if member_id == room_data["created_by"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="channel owner cannot leave channel, archive channel"
-            + " or make another member owner",
+            detail="channel owner cannot leave channel, archive channel or make another member owner",
         )
 
     try:
@@ -259,7 +259,7 @@ async def join_room(
 
     update_members = {"room_members": room["room_members"]}
     update_response = await DB.update(
-        ROOM_COLLECTION, document_id=room_id, data=update_members
+        settings.ROOM_COLLECTION, document_id=room_id, data=update_members
     )  # updates the room data in the db collection
 
     background_tasks.add_task(
@@ -347,7 +347,7 @@ async def close_conversation(
     data = {"room_members": room["room_members"]}
 
     update_response = await DB.update(
-        ROOM_COLLECTION, document_id=room_id, data=data
+        settings.ROOM_COLLECTION, document_id=room_id, data=data
     )  # updates the room data in the db collection
 
     background_tasks.add_task(
