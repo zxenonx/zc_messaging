@@ -35,7 +35,7 @@ platformdirs==2.4.0
 pluggy==1.0.0
 pre-commit==2.15.0
 py==1.10.0
-pydantic==1.8.2
+pydantic==1.10.13
 pylint==2.11.1
 pyparsing==3.0.1
 pytest==6.2.5
