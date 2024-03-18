@@ -4,7 +4,7 @@ astroid==2.8.3
 async-generator==1.10
 attrs==21.2.0
 backports.entry-points-selectable==1.1.0
-black==21.9b0
+black==24.3.0
 bson==0.5.10
 certifi==2023.7.22
 cfgv==3.3.1
