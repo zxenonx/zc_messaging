@@ -62,4 +62,4 @@ virtualenv==20.9.0
 watchgod==0.7
 websockets==10.0
 wrapt==1.13.2
-setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
+setuptools>=70.0.0 # not directly required, pinned by Snyk to avoid a vulnerability
