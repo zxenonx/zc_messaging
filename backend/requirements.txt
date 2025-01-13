@@ -58,7 +58,7 @@ trio==0.19.0
 typing-extensions==3.10.0.2
 urllib3==1.26.18
 uvicorn[standard]
-virtualenv==20.9.0
+virtualenv==20.26.6
 watchgod==0.7
 websockets==10.0
 wrapt==1.13.2
