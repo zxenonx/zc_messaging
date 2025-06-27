@@ -1,4 +1,4 @@
-anyio==3.3.4
+anyio==4.4.0
 asgiref==3.4.1
 astroid==2.8.3
 async-generator==1.10
