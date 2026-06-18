@@ -15,7 +15,7 @@ coverage==6.0.2
 distlib==0.3.3
 fastapi==0.109.1
 fastapi-pagination==0.9.1
-filelock==3.3.1
+filelock==3.20.3
 h11==0.16.0
 httpcore==0.13.7
 httptools==0.2.0
