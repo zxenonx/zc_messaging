@@ -6,7 +6,7 @@ attrs==21.2.0
 backports.entry-points-selectable==1.1.0
 black==25.1.0
 bson==0.5.10
-certifi==2025.6.15
+certifi==2025.7.14
 cfgv==3.3.1
 charset-normalizer==2.0.7
 click==8.0.3
@@ -52,14 +52,14 @@ setuptools>=70.0.0 # not directly required, pinned by Snyk to avoid a vulnerabil
 six==1.16.0
 sniffio==1.2.0
 sortedcontainers==2.4.0
-starlette==0.47.1
+starlette==0.47.2
 toml==0.10.2
 tomli==1.2.2
 trio==0.19.0
 typing-extensions==3.10.0.2
 urllib3==2.5.0
 uvicorn[standard]
-virtualenv==20.31.2
+virtualenv==20.32.0
 watchgod==0.7
 websockets==10.0
 wrapt==1.13.2
